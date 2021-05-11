@@ -1,0 +1,151 @@
+"""
+Sixtine Nodet et Sarah Héron
+"""
+
+from piece import Piece
+import numpy as np
+import random as rnd
+
+class Puzzle:
+    """
+    Un puzzle est défini par:"
+    - pieces: La liste de toutes les pièces (de la classe Piece) du puzzle
+    - size: un couple d'entiers correspondant aux dimensions du puzzle (hauteur, largeur)
+    - c: None pour un puzzle normal, 1 pour un damier, 2 pour un dégradé.
+    """
+    
+    def __init__(self,pieces,size,c,ordreparcours=None) :
+         self.pieces=pieces
+         self.size=size
+         self.c=c
+         self.ordreparcours=ordreparcours
+     
+    def getSize(self):
+        """Fonction qui renvoie le couple des dimensions du puzzle."""
+        return self.size
+    
+    def getListpieces(self):
+        """Fonction qui renvoie la liste des pièces du puzzle."""
+        return self.pieces
+   
+    def getC(self):
+        """Fonction qui renvoie le paramètre c (le type) du puzzle."""
+        return self.c
+    
+    def getOrdreparcours(self):
+        """Fonction qui renvoie la liste correspondant à l'ordre de parcours du puzzle choisi."""
+        return self.ordreparcours
+    
+    def set_ordreparcours(self):
+        """"""
+        self.ordreparcours = ordreparcours(self.size)
+
+        
+def ordreparcours(size):
+    """
+    Fonction qui prend en argument un couple d'entiers (les dimensions du puzzle)
+    Renvoie la liste de couples (coordonnées) ordonnés correspondant à l'ordre dans lequel un puzzle de cette dimension va etre parcouru
+    Rq: l'ordre de parcours est une convention.
+    Ici il consiste à parcourirles bords du puzzle dans le sens horaire en partant du coin HG puis en parcourant l'intérieur de la droite vers la gauche, de haut en bas.
+    """
+    ordreparc = []
+    (n,m) = size
+    for y in range(0,m):
+        ordreparc.append((0,y))
+    for x in range(1,n):
+        ordreparc.append((x,m-1))
+    for y in range(m-2,-1,-1):
+        ordreparc.append((n-1,y))
+    for x in range(n-2,0,-1):
+        ordreparc.append((x,0))
+    for x in range(1,n-1):
+        for y in range(1,m-1):
+            ordreparc.append((x,y))
+    return(ordreparc)
+
+
+def ordreparcours_ligne(size):
+    """Prend en argument le couple des dimensions du puzzle et renvoie un ordre de parcours ligne par ligne."""
+    ordreparc = []
+    (n,m) = size
+    for x in range(0,n):
+        for y in range(0,m):
+            ordreparc.append((x,y))
+    return(ordreparc)
+
+#def ordreparcours_escargot(size):
+#    "Prend en argument le couple des dimensions du puzzle et renvoie un ordre de parcours en 'escargot'"
+#    
+#    ordreparc = []
+    
+def ordreparcours_random(size):
+    """Prend en argument le couple des dimensions du puzzle et renvoie un ordre de parcours créé aléatoirement."""
+    (n,m) = size
+    possibilites = [(i,j) for i in range(n) for j in range(m)]
+    ordreparc = []
+    while possibilites != [] :
+        coord=rnd.choice(possibilites)
+        ordreparc.append(coord)
+        possibilites.pop(possibilites.index(coord))
+    return ordreparc        
+    
+
+def tourner_alea(bord_piece):
+    """Fonction auxiliaire de cree_puzzle qui prend en argument une liste d'entiers. Cette fonction 'tourne une pièce' ie permutte circulairement le bord de 0 à 3 quarts de tour"""
+    tour = rnd.randint(0,4)
+    M = []
+    for i in range (len(bord_piece)):
+            M.append(bord_piece[(i-tour+len(bord_piece))%len(bord_piece)])
+    return(M)
+
+def creer_puzzle(n,m,encoches,c=None):
+    """
+    Fonction qui prend en argument deux entiers correspondant aux dimensions du puzzle voulu, c qui correspond au type du puzzle (normal, damier, dégradé), une liste encoche correspondant aux possibilités d'encoches
+    Créé un puzzle aléatoirement, solvable et aux dimensions souhaitées 
+    Renvoie un élement de la classe Puzzle
+    Rq: le premier élement de la liste des pièces est la pièce d'identité 0 (permet d'avoir le puzzle à l'endroit pour le représenter).
+    """
+    puzzle = np.ndarray((n,m),dtype=list)
+    L=encoches
+    #on initialise tous les haut
+    for i in range(n):
+        for j in range(m):
+            if i==0:
+                puzzle[0][j]=[0]
+            else:
+                puzzle[i][j]=[rnd.choice(L)]
+    #on ajoute le bord droit
+    for i in range(n):
+        for j in range(m):
+            if j==m-1:
+                puzzle[i][j].append(0)
+            else:
+                puzzle[i][j].append(rnd.choice(L))
+    #ensuite le bas
+    for i in range (n):
+        for j in range(m):
+            if i==n-1:
+                puzzle[i][j].append(0)
+            else:
+                puzzle[i][j].append(- puzzle[i+1][j][0])
+    #ensuite la gauche
+    for i in range(n):
+        for j in range(m):
+            if j==0:
+                puzzle[i][j].append(0)
+            else:
+                puzzle[i][j].append(- puzzle[i][j-1][1])
+    liste=[]
+    cpt=0
+    
+    for i in range(n):
+        for j in range(m):
+            liste.append(Piece(id=cpt,bord=tourner_alea(puzzle[i][j])))
+            if c==1:
+                liste[cpt].set_couleur((i+j)% 2)
+            if c==2:
+                liste[cpt].set_couleur(i)
+            cpt+=1 
+                
+    rnd.shuffle(liste)
+    return(Puzzle(pieces=liste,size=(n,m),c=c))
