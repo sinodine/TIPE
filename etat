@@ -1,0 +1,119 @@
+"""
+Sixtine Nodet et Sarah Héron
+"""
+
+import numpy as np
+from piece import *
+from puzzle import *
+from essai import *
+
+
+class Etat:
+    """Un etat est défini par :
+     - posees : matrice des essais posés (None là où il n'y en a pas) aux coordonnées qui leur sont associé
+     - fail : matrice où aux coordonnées x,y est une liste d'essais qui ont échoué pour cet endroit. """
+    
+    def __init__(self,poses,fail,pieces_restantes):
+        self.poses = poses  #matrice d'essais
+        self.fail = fail      #matrice de liste d'essais
+        self.pieces_restantes=pieces_restantes
+        
+    def getPoses(self):
+        """Renvoie la matrice des essais posés."""
+        return self.poses
+   
+    def getListfail(self,x,y):
+        """Prend en argument x et y. Renvoie la liste des représentants des classes d'équivalence des essais qui ont échoué pour l'emplacement (x,y) ( et la liste vide s'il n'y en a aucun)"""
+        if self.fail[x][y]==None:
+            return([])
+        else:
+            return self.fail[x][y]
+   
+    def getEssaipose(self,x,y):
+        """Prend en argument x et y. Renvoie l'essai qui a été posé en x et y, None s'il n'y en a pas"""
+        return self.poses[x][y]
+    
+    def last_essai(self,puzzle,x,y):
+        ordreparc = puzzle.getOrdreparcours()
+        k = ordreparc.index((x,y)) 
+        (i,j) = ordreparc[k-1]
+        return self.getEssaipose(i,j)
+    
+    def ranger_piece(self,p,liste):
+        """Prend en argument une piece et une partition par classe d'équivalence des pieces restantes et ajoute la piece dans sa classe d'équivalence."""
+        liste[p.getClasse()].append(p)
+    
+    def ranger_fail(self,essai,liste):
+        """Prend en argument un essai et une liste d'essais. Ajoute cet essai à la liste des ratés dans la matrice des fail, au bon endroit. """
+        (x,y)=(essai.getX(),essai.getY())
+        if self.fail[x][y] == None:
+            self.fail[x][y] = [essai]
+        else:
+            self.fail[x][y].append(essai)
+        self.poses[x][y] = None
+        self.ranger_piece(essai.getPiece(),liste)
+   
+    def copy(self):
+        """Renvoie une copie de cet état."""
+        return Etat( poses = self.poses.copy(), fail = self.fail.copy())
+    
+    def ajoute_essai(self,essai):
+        """Pose l'essai ie ajoute l'essai dans la bonne case de la matrice des essais posés."""
+        (x,y) = (essai.getX(),essai.getY())
+        self.poses[x][y] = essai
+  
+def creer_Etat(puzzle): 
+    """Fonction qui créé un état 'vide'"""
+    size = puzzle.getSize()
+    poses = np.ndarray(size,dtype=Essai)
+    fail = np.ndarray(size,dtype=list)
+    return [Etat(poses = poses, fail = fail,pieces_restantes=[]), classe_equivalence(puzzle.getListpieces())]
+
+def creer_Etat2(puzzle): 
+    """Fonction qui créé un état 'vide'"""
+    size = puzzle.getSize()
+    poses = np.ndarray(size,dtype=Essai)
+    fail = np.ndarray(size,dtype=list)
+    return [Etat(poses = poses, fail = fail, pieces_restantes=classe_equivalence(puzzle.getListpieces()))]
+
+def nouvelEtat(etat,essai,pieces_restantes):
+    """Fonction qui prend en argument un etat et un essai. Renvoie un nouvel état qui est une copie de l'état en argument, auquel on a ajouté l'essai et enlève la pièce associée à l'état de la liste des pièces restantes"""
+    nouveletat=etat.copy()
+    nouveletat.ajoute_essai(essai)
+    p=essai.getPiece()
+    classe=p.getClasse()
+    k=0
+    while pieces_restantes[classe][k].getId() != p.getId():
+           k+=1
+    pieces_restantes[classe].pop(k)
+    return(nouveletat)
+
+E0= Essai(piece=Piece(id=-1,bord=[0,0,0,0]),x=-1,y=-1,rotation=0)
+
+def essais_voisins(etat,x,y):
+    """"Fonction qui prend en argument un etat et deux entiers x et y. Cette fonction renvoie la liste des essais voisins à la position de coordonnée (x,y), triés dans l'odre horaire en partant du haut (ie haut, droite, bas, gauche)"""
+    Poses=etat.getPoses()
+    (n,m)=np.shape(Poses)
+    global E0
+    listeVoisins=[E0 for _ in range(4)]
+    l=[(x-1,y),(x,y+1),(x+1,y),(x,y-1)]
+    for i in range(4):
+        (x1,y1)=l[i]
+        if x1 != -1 and x1!= n:
+            if y1 !=-1 and y1 != m :
+                listeVoisins[i]=etat.getEssaipose(x1,y1)
+    return listeVoisins
+
+def print_etat(etat):
+    m=etat.poses
+    a=np.ndarray(np.shape(m),dtype=int)
+    (x,y)=np.shape(m)
+    for i in range(x):
+        for j in range(y):
+            if m[i][j]==None:
+                a[i][j]=-1
+            else:
+                p=m[i][j].getPiece()
+                a[i][j]=p.getId()
+    return(a)
+    
