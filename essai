@@ -1,0 +1,69 @@
+"""
+Sixtine Nodet et Sarah Héron
+"""
+from piece import *
+from puzzle import *
+
+class Essai:
+    """"
+    Un essai est défini par :
+     - piece: sa pièce (de la classe Piece)
+     - x,y : ses coordonneés (deux entiers)
+     - rotation : sa rotation (un entier entre 0 et 3)
+     """
+    
+    def __init__(self,piece,x,y,rotation):
+        self.piece=piece  #element de la classe piece
+        self.coord=(x,y)  #couple d'entiers
+        self.rotation=rotation  #entier de 0 à 3
+    
+    def getPiece(self):
+        """Renvoie la pièce associées à l'essai."""
+        return(self.piece)
+   
+    def getX(self):
+        """Renvoie la coordonnée x de l'essai."""
+        return(self.coord[0])
+    
+    def getY(self):
+        """Renvoie la coordonnée y de l'essai."""
+        return(self.coord[1])
+    
+    def getRotation(self):
+        """Renvoie la rotation associée à l'essai."""
+        return(self.rotation)
+
+
+def egal(e1,e2):
+    """Prend en argument deux essai et renvoie True s'il correspondent a des pièces de la même classe tournées de la même manière. """
+    if e1.getPiece().getClasse() == e2.getPiece().getClasse():
+        tour = 0
+        while e1.getPiece().rotate(tour) != e2.getPiece().getBord():
+            tour += 1
+        return (e1.getRotation()+tour)%4 == e2.getRotation()%4
+    return False
+
+def essai_in(essai,liste):
+    """"Prend en argument un essai et une liste d'essais et renvoie True si l'essaie appartient à la liste au sens large (ie)."""
+    test = False
+    n = len(liste)
+    k = 0
+    while not test and k < n:
+        if egal(essai,liste[k]):
+            test = True
+        k+=1
+    return test
+
+def coordnext(puzzle,pieces_restantes):
+    """"Fonction qui prend en argument un essai et les dimensions du puzzle. Renvoie les coordonnées du prochain emplacement où une pièce devra etre posées en suivant l'ordre de parcours prédéfini"""
+    k=len(flatten(pieces_restantes))
+    ordreparc=puzzle.getOrdreparcours()
+    return ordreparc[-k]
+
+def flatten(liste):
+    l=[]
+    for k in liste:
+        l+=k
+    return(l)
+
+
