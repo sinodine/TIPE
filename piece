@@ -1,0 +1,137 @@
+"""
+Sixtine Nodet et Sarah Héron
+"""
+
+import numpy as np
+
+class Piece:
+    """"
+    Une pièce est définie par:
+    - id : un entier correspondant à l'identifiant de la pièce et qui lui est unique
+    - bord : liste de longueur 4 correspondant à la suite des encoches du bord d'un pièce lu dans le sens horaire
+    - classe: None si non défini, sinon entier correspondant au numéro de la classe à laquelle appartient la pièce
+    - couleur: un entier ou None.
+    """
+    
+    def __init__(self,id,bord,classe = None,couleur = None):
+        self.id = id
+        self.bord = bord
+        self.classe = classe
+        self.couleur = couleur
+        
+    def getId(self):
+        return self.id
+    def getBord(self):
+        return self.bord
+    def getClasse(self):
+        return self.classe
+    def getCouleur(self):
+        return self.couleur
+    def set_classe(self,classe):
+        self.classe = classe
+    def set_couleur(self,c):
+        self.couleur = c
+    
+    def rotate(self,tour):
+        """Prend en argument un entier tour et renvoie une liste correspondant au bord de la pièce tourné de tour dans le sens horaire. """
+        
+        bord = self.bord
+        bord_tourné = []
+        for i in range(len(bord)):
+            bord_tourné.append( bord[(i-tour+len(bord))%len(bord)] )
+        return bord_tourné
+   
+     
+def match(essai,listeVoisins):
+    """ Fonction prenant en argument un essai et la liste de ses Voisins. Renvoie True si l'essai est compatible au niveau des encoches avec les essais préalablement posés autour, False sinon."""
+    
+    p0,r0 = essai.getPiece(),essai.getRotation()
+    test = [0,0,0,0]
+    for i in range(len(listeVoisins)):
+        if listeVoisins[i] == None:
+            test[i] = 1
+        else:
+            pi,ri = listeVoisins[i].getPiece(),listeVoisins[i].getRotation()
+            if pi.bord[(i+2)%4 - ri+4%4]+ p0.bord[i-r0+4%4] == 0:
+                test[i] = 1
+    return not 0 in test
+
+
+def match_couleur(essai,listeVoisins,c):
+    """ Fonction prenant en argument un essai et la liste de ses Voisins. Rrenvoie True si l'essai est compatible au niveau de la couleur avec les essais préalablement posés autour, False sinon."""
+    
+    if c == None:
+        return True
+    if c == 1:
+        p0 = essai.getPiece()
+        test = True
+        for e in listeVoisins:
+            if e != None and e.getPiece().getId() != -1 and p0.getCouleur() + e.getPiece().getCouleur() != 1:
+                test = False
+        return test
+    if c == 2:
+        return essai.getPiece().getCouleur() == essai.getX()
+        
+        
+def compare_pieces(p1,p2):
+    """Prend en argument deux pièces et renvoie True si elles ont le meme bord ie la meme suite d'encoches, False sinon."""
+    
+    bord1 = p1.getBord()
+    bord2 = p2.getBord()
+    tour = 0
+    if p1.getCouleur() == p2.getCouleur():
+            while tour < 4 :
+                if bord1[tour] == bord2[0]:
+                    if p1.rotate(tour) == bord2:
+                        return True
+                tour += 1
+    return False
+
+
+def classe_equivalence_piece(p,listePiece,deja_vu,k):
+    classe_p = []
+    for i in range(len(listePiece)):
+        if not deja_vu[i] and compare_pieces(p, listePiece[i]):
+            classe_p.append(listePiece[i])
+            deja_vu[i] = True
+            listePiece[i].set_classe(k)
+    return classe_p
+
+
+def classe_equivalence(listePiece):
+    """ Prend en argument une liste de pièce, et renvoie la partition par classes d'équivalence de cet ensemble de pièces."""
+    
+    classes = []
+    deja_vu = [False]*len(listePiece)
+    for i in range(len(listePiece)):
+        if not deja_vu[i]:
+            classei = classe_equivalence_piece(listePiece[i],listePiece,deja_vu,len(classes))
+            classes.append(classei)
+    return classes
+
+
+
+"***************************************************************************************************"
+
+
+def print_id_liste_pieces(liste) :
+    L=[]
+    for k in liste:
+        L.append(k.id)
+    return(L)
+
+def print_id_classes(listedeliste):
+    L=[]
+    for l in listedeliste:
+        L.append(print_liste_essais(l))
+    return L
+
+
+
+def print_liste_essais(liste) :
+    L=[]
+    for k in liste:
+        L.append(k.piece.id)
+    return(L)
+
+"***************************************************************************************************"
